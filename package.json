@@ -1,0 +1,30 @@
+{
+  "name": "Magic-Mirror-Module-GPIO-Handler",
+  "version": "0.1",
+  "description": "A Module to setup and use the GPIO in Magic Mirror",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sjohn21/MMM-GPIO-HANDLER.git"
+  },
+  "keywords": [
+    "magic mirror",
+    "GPIO",
+	"Input",
+	"Output",
+	"Pigpio",
+	"Buttons",
+	"PIR",
+	"PWM",
+    "module"
+  ],
+  "author": "Sjohn21",
+  "contributors": "https://github.com/Sjohn21/MMM-GPIO-HANDLER/graphs/contributors",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Sjohn21/MMM-GPIO-HANDLER/issues"
+  },
+  "homepage": "https://github.com/Sjohn21/MMM-GPIO-HANDLER#readme",
+  "dependencies": {
+    "pigpio": "3.3.1"
+  }
+}
