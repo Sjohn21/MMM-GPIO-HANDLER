@@ -10,12 +10,27 @@
 Module.register('MMM-GPIO-HANDLER',{	
 	requiresVersion: "2.1.0",
 	defaults: {
-		pinConfiguration: [],
 		debounce: 100,
-		longPressTime: 1000
+		longPressTime: 1000,
+		input: {},
+		output: {}
 	},
 	
 	start: function(){
-		Log.info("Starting module: " + this.name);
-	}
+		Log.log("Starting module: " + this.name);
+		this.sendSocketNotification("CONFIG", this.config);
+	},
+	
+	socketNotificationReceived: function (notification, payload) {
+		this.sendNotification(notification, payload);
+	},
+	
+	notificationReceived: function (notification, payload) {
+		if (
+			notification === "HANDLE_PWM" ||
+			notification === "HANDLE_ON/OFF"
+		) {
+			this.sendSocketNotification(notification, payload);
+		}
+		}
 });
