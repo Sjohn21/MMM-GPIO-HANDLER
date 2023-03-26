@@ -23,21 +23,23 @@ module.exports = NodeHelper.create({
 			me.gpio = [];
 		}
 		for(var pin in me.config.input){
+			var pindata = me.config.input[String(pin)]
 			console.log(me.name + ": Registering input pin: " + pin);
-			me.pin[String(pin)].type = pin.type
-			me.pin[String(pin)].type = pin.name
+			me.pin[String(pin)].type = pindata.type
+			me.pin[String(pin)].type = pindata.name
 			me.pin[String(pin)].gpio = new Gpio(pin, { mode: Gpio.INPUT });
-			me.pin[String(pin)].gpio.pullUpDown(pin.pull);
-			me.pin[String(pin)].gpio.enableInterrupt(pin.edge);
-			if(pin.type == "Button"){
+			me.pin[String(pin)].gpio.pullUpDown(pindata.pull);
+			me.pin[String(pin)].gpio.enableInterrupt(pindata.edge);
+			if(pindata.type == "Button"){
 				me.pin[String(pin)].gpio.glitchFilter(me.config.debounce);
 			}
 		}
 		
 		for(var pin in me.config.output){
+			var pindata = me.config.output[String(pin)]
 			console.log(me.name + ": Registering output pin: " + pin);
-			me.pin[String(pin)].type = pin.type
-			me.pin[String(pin)].type = pin.name
+			me.pin[String(pin)].type = pindata.type
+			me.pin[String(pin)].type = pindata.name
 			me.pin[String(pin)].gpio = new Gpio(pin, { mode: Gpio.OUTPUT });
 		}
 		
