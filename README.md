@@ -15,7 +15,7 @@ To use the module insert it in the config.js file. Here is an example:
 	config: {
 		debounce: 100,
 		longPressTime: 1000,
-		Input: {
+		input: {
 			"24": {
 				type: "Button",
 				name: "Button 1",
@@ -35,7 +35,7 @@ To use the module insert it in the config.js file. Here is an example:
 				edge: "EITHER_EDGE"				
 			}
 		},
-		Output: {
+		output: {
 			"4":  {
 				type: "PWM",
 				name: "Ledstrip FET"
