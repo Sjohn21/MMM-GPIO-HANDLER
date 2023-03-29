@@ -30,6 +30,7 @@ module.exports = NodeHelper.create({
 				pins[String(pin)]["direction"] = "input";
 				pins[String(pin)]["type"] = pindata.type;
 				pins[String(pin)]["name"] = pindata.name;
+				pins[String(pin)]["sysname"] = pindata.name.replace(/ /g,"_").toUpperCase();
 				pins[String(pin)]["pull"] = pindata.pull;
 				pins[String(pin)]["edge"] = pindata.edge;
 				pins[String(pin)]["gpio"] = new Gpio(pin, { mode: Gpio.INPUT });
@@ -42,7 +43,9 @@ module.exports = NodeHelper.create({
 				pins[String(pin)]["direction"] = "output";
 				pins[String(pin)]["type"] = pindata.type;
 				pins[String(pin)]["name"] = pindata.name;
+				pins[String(pin)]["sysname"] = pindata.name.replace(/ /g,"_").toUpperCase();
 				pins[String(pin)]["gpio"] = new Gpio(pin, { mode: Gpio.OUTPUT });
+				pins[String(pin)].gpio.digitalWrite(pindata.default_state);
 			}
 			
 			console.log(me.name + ": All pins in configuration are registered.");
@@ -82,7 +85,7 @@ module.exports = NodeHelper.create({
 									startTick = tick;
 									timeout = setTimeout(() => {
 										console.log("Button '" + pindata.name + "' is pressed longer than "+ Math.round((config.longPressTimeOut/1000000)*10)/10 +" seconds. Is it stuck?");
-										me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_LONG_PRESSED");
+										me.sendSocketNotification(pindata.sysname + "_LONG_PRESSED");
 										me.sendSocketNotification("ALERT","Button '" + pindata.name + "' is pressed longer than "+ Math.round((config.longPressTimeOut/1000000)*10)/10 +" seconds. A long press is send, but is it stuck?");
 									}, config.longPressTimeOut / 1000);
 										
@@ -94,11 +97,11 @@ module.exports = NodeHelper.create({
 									const diff = (endTick >> 0) - (startTick >> 0);
 									console.log("Button '" + pindata.name + "' is released.");
 									if(diff < config.longPressTime){
-										me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_SHORT_PRESSED");
+										me.sendSocketNotification(pindata.sysname + "_SHORT_PRESSED");
 										console.log("Button '" + pindata.name + "' was pressed only short.");
 									}
 									else if(diff > config.longPressTime && diff < config.longPressTimeOut){
-										me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_LONG_PRESSED");
+										me.sendSocketNotification(pindata.sysname + "_LONG_PRESSED");
 										console.log("Button '" + pindata.name + "' was pressed long.");
 									}
 								}
@@ -108,7 +111,7 @@ module.exports = NodeHelper.create({
 									startTick = tick;
 									timeout = setTimeout(() => {
 										console.log("Button '" + pindata.name + "' is pressed longer than "+ Math.round((config.longPressTimeOut/1000000)*10)/10 +" seconds. Is it stuck?");
-										me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_LONG_PRESSED");
+										me.sendSocketNotification(pindata.sysname + "_LONG_PRESSED");
 										me.sendSocketNotification("ALERT","Button '" + pindata.name + "' is pressed longer than "+ Math.round((config.longPressTimeOut/1000000)*10)/10 +" seconds. A long press is send, but is it stuck?");
 									}, config.longPressTimeOut / 1000);
 									
@@ -120,11 +123,11 @@ module.exports = NodeHelper.create({
 									const diff = (endTick >> 0) - (startTick >> 0);
 									console.log("Button '" + pindata.name + "' is released.");
 									if(diff < config.longPressTime){
-										me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_SHORT_PRESSED");
+										me.sendSocketNotification(pindata.sysname + "_SHORT_PRESSED");
 										console.log("Button '" + pindata.name + "' was pressed only short.");
 									}
 									else if(diff > config.longPressTime && diff < config.longPressTimeOut){
-										me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_LONG_PRESSED");
+										me.sendSocketNotification(pindata.sysname + "_LONG_PRESSED");
 										console.log("Button '" + pindata.name + "' was pressed long.");
 									}
 								}
@@ -138,35 +141,36 @@ module.exports = NodeHelper.create({
 						pindata.gpio.on('alert', (level, tick) => {
 							if(pindata.pull == "PUD_UP"){
 								if(level == 0){
-									me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_DETECTION");
+									me.sendSocketNotification(pindata.sysname + "_DETECTION");
 									console.log(pindata.name + " detected presence");
 								}
 								else{
-									me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_NO_DETECTION");
+									me.sendSocketNotification(pindata.sysname + "_NO_DETECTION");
 									console.log(pindata.name + " did not detect presence");
 								}
 							}
 							else {
 								if(level == 1){
-									me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_DETECTION");
+									me.sendSocketNotification(pindata.sysname + "_DETECTION");
 									console.log(pindata.name + " detected presence");
 								}
 								else{
-									me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_NO_DETECTION");
+									me.sendSocketNotification(pindata.sysname + "_NO_DETECTION");
 									console.log(pindata.name + " did not detect presence");
 								}
 							}
 						});
+						
 						break;
 					case "Other":
 						pindata.gpio.enableAlert();
 						pindata.gpio.on('alert', (level, tick) => {
 							if(level == 1){
-								me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_HIGH");
+								me.sendSocketNotification(pindata.sysname + "_HIGH");
 								console.log(pindata.name + " is high.");
 							}
 							else{
-								me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_LOW");
+								me.sendSocketNotification(pindata.sysname + "_LOW");
 								console.log(pindata.name + " is low.");
 							}
 						});
