@@ -10,14 +10,15 @@
 Module.register('MMM-GPIO-HANDLER',{	
 	requiresVersion: "2.1.0",
 	defaults: {
-		debounce: 100,
-		longPressTime: 1000,
+		debounce: 10000,
+		longPressTime: 500000,
+		longPressTimeOut: 3000000,
 		input: {},
 		output: {}
 	},
 	
 	start: function(){
-		Log.log("Starting module: " + this.name);
+		console.log("Starting module: " + this.name);
 		this.sendSocketNotification("CONFIG", this.config);
 	},
 	
