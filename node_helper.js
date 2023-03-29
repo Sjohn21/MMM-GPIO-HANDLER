@@ -45,7 +45,7 @@ module.exports = NodeHelper.create({
 				pins[String(pin)]["gpio"] = new Gpio(pin, { mode: Gpio.OUTPUT });
 			}
 			
-			console.log(me.name + "All pins in configuration are registered.");
+			console.log(me.name + ": All pins in configuration are registered.");
 			
 			this.inputHandler(pins,confvals);
 			me.started = true;
@@ -134,9 +134,43 @@ module.exports = NodeHelper.create({
 					
 						break;
 					case "PIR":
-					
+						pindata.gpio.enableAlert();
+						pindata.gpio.on('alert', (level, tick) => {
+							if(pindata.pull == "PUD_UP"){
+								if(level == 0){
+									me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_DETECTION");
+									console.log(pindata.name + " detected presence");
+								}
+								else{
+									me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_NO_DETECTION");
+									console.log(pindata.name + " did not detect presence");
+								}
+							}
+							else {
+								if(level == 1){
+									me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_DETECTION");
+									console.log(pindata.name + " detected presence");
+								}
+								else{
+									me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_NO_DETECTION");
+									console.log(pindata.name + " did not detect presence");
+								}
+							}
+						});
 						break;
 					case "Other":
+						pindata.gpio.enableAlert();
+						pindata.gpio.on('alert', (level, tick) => {
+							if(level == 1){
+								me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_HIGH");
+								console.log(pindata.name + " is high.");
+							}
+							else{
+								me.sendSocketNotification(pindata.name.replace(/ /g,"_").toUpperCase() + "_LOW");
+								console.log(pindata.name + " is low.");
+							}
+						});
+						
 					
 						break;
 					default:
