@@ -231,7 +231,7 @@ module.exports = NodeHelper.create({
 				
 				if(dir = 1){
 					dutyCycle += pin.PWM_step;
-				else{
+				} else{
 					dutyCycle -= pin.PWM_step;
 				}
 				
