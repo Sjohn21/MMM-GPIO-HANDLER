@@ -205,7 +205,6 @@ module.exports = NodeHelper.create({
 	initializeOutputs: function(pins,config){
 		const me = this;
 		for(var pin in pins){
-			console.log(pin);
 			let pindata = pins[String(pin)];
 			switch(pindata.type){
 				case "PWM":
@@ -230,10 +229,10 @@ module.exports = NodeHelper.create({
 			setInterval(() => {
 				pin.gpio.pwmWrite(dutyCycle);
 				
-				if(dir = 1){
-					dutyCycle += pin.PWM_step;
+				if(dir == 1){
+					dutyCycle += pin.PWM_pulse_step;
 				} else{
-					dutyCycle -= pin.PWM_step;
+					dutyCycle -= pin.PWM_pulse_step;
 				}
 				
 				if (dutyCycle > 255) {
@@ -243,7 +242,7 @@ module.exports = NodeHelper.create({
 					dutyCycle = 0;
 					dir = 1;
 				}
-			}, pin.PWM_Speed);
+			}, pin.PWM_pulse_speed);
 		} else if(pin.PWM_type === "Fixed"){
 			pin.gpio.pwmWrite(pin.PWM_state);
 		}
