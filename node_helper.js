@@ -49,7 +49,7 @@ module.exports = NodeHelper.create({
 						pins.output[String(pin)]["PWM_state"] = pindata.default_state ?? confvals.default_state;
 					}
 				} else{
-					pins.output[String(pin)]["state"] = pindate.default_state ?? confvals.default_state;
+					pins.output[String(pin)]["state"] = pindata.default_state ?? confvals.default_state;
 				}
 				pins.output[String(pin)]["sysname"] = pindata.name.replace(/ /g,"_").toUpperCase();
 				pins.output[String(pin)]["gpio"] = new Gpio(pin, { mode: Gpio.OUTPUT });
