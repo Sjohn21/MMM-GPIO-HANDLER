@@ -45,7 +45,7 @@ module.exports = NodeHelper.create({
 					if(pins.output[String(pin)]["PWM_type"] === "Pulse"){
 						pins.output[String(pin)]["PWM_pulse_speed"] = pindata.default_PWM_pulse_speed ?? confvals.default_PWM_pulse_speed;
 						pins.output[String(pin)]["PWM_pulse_step"] = pindata.default_PWM_pulse_step ?? confvals.default_PWM_pulse_step;
-					} else if(pins.output[String(pin)]["PWM_type"] === "Fixed")){
+					} else if(pins.output[String(pin)]["PWM_type"] === "Fixed"){
 						pins.outputString(pin)]["PWM_state"] = pindata.default_state ?? confvals.default_state;
 					}
 				} else{
