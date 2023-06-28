@@ -14,7 +14,11 @@ Module.register('MMM-GPIO-HANDLER',{
 		longPressTime: 500000,
 		longPressTimeOut: 3000000,
 		input: {},
-		output: {}
+		output: {},
+		default_state: 0,
+		default_PWM_type: "Fixed",
+		default_PWM_pulse_speed: 500,
+		default_PWM_pulse_step: 10
 	},
 	
 	start: function(){
