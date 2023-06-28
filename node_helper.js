@@ -20,7 +20,7 @@ module.exports = NodeHelper.create({
 		
 		if (notification === "CONFIG" && me.started === false) {
 			let{input, output, ...confvals} = payload;
-			var pins = {};
+			var pins = {input : {}, output : {}};
 		
 			for(var pin in input){
 				var pindata = input[String(pin)];
