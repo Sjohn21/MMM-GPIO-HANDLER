@@ -205,13 +205,14 @@ module.exports = NodeHelper.create({
 	initializeOutputs: function(pins,config){
 		const me = this;
 		for(var pin in pins){
+			console.log(pin);
 			let pindata = pins[String(pin)];
 			switch(pindata.type){
 				case "PWM":
-					this.PWMHandler(pin);
+					this.PWMHandler(pins[String(pin)]);
 					break;
 				case "On/Off":
-					this.OnOffHandler(pin);
+					this.OnOffHandler(pins[String(pin)]);
 					break;
 				default:
 					console.log("Output type " + pindata.type + " of output pin " + pin + " not recognized. Could not be initialized.");
