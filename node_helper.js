@@ -15,63 +15,80 @@ module.exports = NodeHelper.create({
 		this.started = false;
 	},
 	
-		socketNotificationReceived: function (notification, payload) {
+	socketNotificationReceived: function (notification, payload) {
 		const me = this;
+		let pins = { input: {}, output: {} };
 
 		if (notification === "CONFIG" && me.started === false) {
-		  let { input, output, ...confvals } = payload;
-		  var pins = { input: {}, output: {} };
+		  	let { input, output, ...confvals } = payload;
+		  
 
-		  for (var pin in input) {
-			var pindata = input[String(pin)];
-			console.log(me.name + ": Registering input pin: " + pin + " for " + pindata.name);
-			pins.input[String(pin)] = {};
-			pins.input[String(pin)]["type"] = pindata.type;
-			pins.input[String(pin)]["name"] = pindata.name;
-			pins.input[String(pin)]["sysname"] = pindata.name.replace(/ /g, "_").toUpperCase();
-			pins.input[String(pin)]["pull"] = pindata.pull;
-			pins.input[String(pin)]["edge"] = pindata.edge;
+		  	for (var pin in input) {
+				var pindata = input[String(pin)];
+				console.log(me.name + ": Registering input pin: " + pin + " for " + pindata.name);
+				pins.input[String(pin)] = {};
+				pins.input[String(pin)]["type"] = pindata.type;
+				pins.input[String(pin)]["name"] = pindata.name;
+				pins.input[String(pin)]["sysname"] = pindata.name.replace(/ /g, "_").toUpperCase();
+				pins.input[String(pin)]["pull"] = pindata.pull;
+				pins.input[String(pin)]["edge"] = pindata.edge;
 
-			// Initialize input GPIO using pigpio-client
-			pins.input[String(pin)]["gpio"] = pigpio.gpio(parseInt(pin, 10));
-			pins.input[String(pin)]["gpio"].modeSet('input');
-		  }
-
-		  for (var pin in output) {
-			var pindata = output[String(pin)];
-			console.log(me.name + ": Registering output pin: " + pin + " for " + pindata.name);
-			pins.output[String(pin)] = {};
-			pins.output[String(pin)]["type"] = pindata.type;
-			pins.output[String(pin)]["name"] = pindata.name;
-
-			// Initialize output GPIO using pigpio-client
-			pins.output[String(pin)]["gpio"] = pigpio.gpio(parseInt(pin, 10));
-			pins.output[String(pin)]["gpio"].modeSet('output');
-
-			// Initialize PWM control for PWM-type outputs
-			if (pindata.type === "PWM") {
-			  pins.output[String(pin)]["PWM_type"] = pindata.default_PWM_type ?? confvals.default_PWM_type;
-			  if (pins.output[String(pin)]["PWM_type"] === "Pulse") {
-				pins.output[String(pin)]["PWM_pulse_speed"] = pindata.default_PWM_pulse_speed ?? confvals.default_PWM_pulse_speed;
-				pins.output[String(pin)]["PWM_pulse_step"] = pindata.default_PWM_pulse_step ?? confvals.default_PWM_pulse_step;
-			  } else if (pins.output[String(pin)]["PWM_type"] === "Fixed") {
-				pins.output[String(pin)]["PWM_state"] = pindata.default_state ?? confvals.default_state;
-			  }
-			} else {
-			  pins.output[String(pin)]["state"] = pindata.default_state ?? confvals.default_state;
+				// Initialize input GPIO using pigpio-client
+				pins.input[String(pin)]["gpio"] = pigpio.gpio(parseInt(pin, 10));
+				pins.input[String(pin)]["gpio"].modeSet('input');
 			}
-		  }
 
-		  console.log(me.name + ": All pins in configuration are registered.");
+			for (var pin in output) {
+				var pindata = output[String(pin)];
+				console.log(me.name + ": Registering output pin: " + pin + " for " + pindata.name);
+				pins.output[String(pin)] = {};
+				pins.output[String(pin)]["type"] = pindata.type;
+				pins.output[String(pin)]["name"] = pindata.name;
 
-		  this.inputHandler(pins.input, confvals);
-		  this.initializeOutputs(pins.output, confvals);
-		  me.started = true;
+				// Initialize output GPIO using pigpio-client
+				pins.output[String(pin)]["gpio"] = pigpio.gpio(parseInt(pin, 10));
+				pins.output[String(pin)]["gpio"].modeSet('output');
+
+				if (pindata.type === "PWM") {
+				pins.output[String(pin)]["default_PWM_type"] = pindata.default_PWM_type ?? confvals.default_PWM_type;
+				if (pins.output[String(pin)]["default_PWM_type"] === "Pulse") {
+					pins.output[String(pin)]["default_PWM_pulse_speed"] = pindata.default_PWM_pulse_speed ?? confvals.default_PWM_pulse_speed;
+					pins.output[String(pin)]["default_PWM_pulse_step"] = pindata.default_PWM_pulse_step ?? confvals.default_PWM_pulse_step;
+				} else if (pins.output[String(pin)]["default_PWM_type"] === "Fixed") {
+					pins.output[String(pin)]["default_PWM_state"] = pindata.default_state ?? confvals.default_state;
+				}
+				} else {
+				pins.output[String(pin)]["default_state"] = pindata.default_state ?? confvals.default_state;
+				}
+			}
+
+			console.log(me.name + ": All pins in configuration are registered.");
+
+			this.inputHandler(pins.input, confvals);
+			this.initializeOutputs(pins.output, confvals);
+			me.started = true;
 
 		} else if (notification === "HANDLE_PWM" && me.started === true) {
-		  // Handle PWM here using pigpio-client
+			const { pin, pwmType, pwmSpeedState, pwmStep } = payload;
+			const pinConfig = pins.output[String(pin)];
+
+			if (pinConfig) {
+				// Roep de PWMHandler-functie aan
+				me.PWMHandler(pinConfig, me.config, pwmType, pwmSpeedState, pwmStep);
+			} else {
+				console.error(`Pin ${pin} is not configured as an output pin.`);
+			}
+
 		} else if (notification === "HANDLE_ON/OFF" && me.started === true) {
-		  // Handle ON/OFF here using pigpio-client
+			const { pin, state } = payload;
+			const pinConfig = pins.output[String(pin)];
+				
+			if (pinConfig) {
+				me.OnOffHandler(pinConfig, config, state);
+			} else{
+				console.error(`Pin ${pin} is not configured as an output pin.`);
+			}
+
 		} else if (notification !== "CONFIG" && me.started === false) {
 		  me.sendSocketNotification("Notification '" + notification + "' received, but MMM-GPIO-HANDLER is not (completely) initialized yet.");
 		  console.log("Notification '" + notification + "' received, but MMM-GPIO-HANDLER is not (completely) initialized yet.");
@@ -79,7 +96,7 @@ module.exports = NodeHelper.create({
 		  me.sendSocketNotification("Notification '" + notification + "' received, but MMM-GPIO-HANDLER does not recognize this notification.");
 		  console.log("Notification '" + notification + "' received, but MMM-GPIO-HANDLER does not recognize this notification.");
 		}
-	  },
+	},
 
 	inputHandler: function (pins, config) {
 		const me = this;
@@ -223,37 +240,75 @@ module.exports = NodeHelper.create({
 		}
 	},
 
-	PWMHandler: function (pin) {
-		if(pin.PWM_type === "Pulse"){
-			let dutyCycle = 0;
-			let dir = 1;
+	PWMHandler: function (pin, config, pwmType, pwmSpeedState, pwmStep) {
+		try {
+			const type = pwmType || pin.default_PWM_type || config.default_PWM_type;
+			const speed = pwmSpeedState || pin.default_PWM_pulse_speed || config.default_PWM_pulse_speed;
+			const step = pwmStep || pin.default_PWM_pulse_step || config.default_PWM_pulse_step;
+			const state = pwmSpeedState || pin.default_PWM_state || config.default_PWM_state;
+			
+			if (!pin.gpio) {
+				throw new Error("Pin not initialized for GPIO.");
+			}
+			if (pin.type !== "PWM" ) {
+				throw new Error("Pin not configured for PWM.");
+			}
 
-			setInterval(() => {
-				pin.gpio.analogWrite(dutyCycle);
-				
-				if(dir == 1){
-					dutyCycle += pin.PWM_pulse_step;
-				} else{
-					dutyCycle -= pin.PWM_pulse_step;
+			if(type === "Pulse"){
+				if (typeof speed !== "number" || typeof step !== "number" || speed < 4 || step < 1 || step > 255) {
+					throw new Error("Invalid speed or step value for PWM pulse.");
 				}
-				
-				if (dutyCycle > 255) {
-					dutyCycle = 255;
-					dir = 0;
-				} else if(dutyCycle < 0) {
-					dutyCycle = 0;
-					dir = 1;
+
+				let dutyCycle = 0;
+				let dir = 1;
+
+				setInterval(() => {
+					pin.gpio.analogWrite(dutyCycle);
+					
+					if(dir == 1){
+						dutyCycle += step;
+					} else{
+						dutyCycle -= step;
+					}
+					
+					if (dutyCycle > 255) {
+						dutyCycle = 255;
+						dir = 0;
+					} else if(dutyCycle < 0) {
+						dutyCycle = 0;
+						dir = 1;
+					}
+				}, speed);
+			} else if(type === "Fixed"){
+				if (typeof state !== "number" || state <1 || state > 255) {
+					throw new Error("Invalid state value for PWM fixed.");
 				}
-			}, pin.PWM_pulse_speed);
-		} else if(pin.PWM_type === "Fixed"){
-			pin.gpio.analogWrite(pin.PWM_state);
+				pin.gpio.analogWrite(state);
+			} else {
+				throw new Error("Invalid PWM type specified.");
+			}
+		} catch (error){
+			console.error("PWM handling error:", error.message);
 		}
-		// add error handler
-		// add Hardware PWM support?
+			// add Hardware PWM support?
 	},
 
-	OnOffHandler: function (pin) {
-		pin.gpio.write(pin.state);
+	OnOffHandler: function (pin, config, specState) {
+		try{
+			const state = specState || pin.default_state || config.default_state;
+
+			if (!pin.gpio) {
+				throw new Error("Pin not initialized for GPIO.");
+			}
+
+			if (state !== 0 && state !== 1) {
+				throw new Error("Invalid state value. State must be 0 or 1.");
+			  }
+
+			pin.gpio.write(default_pin.state);
+		} catch (error){
+			console.error("On/Off handling error:", error.message);
+		}
 	},
 	
 	stop: function() {
