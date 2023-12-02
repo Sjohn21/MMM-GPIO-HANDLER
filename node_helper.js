@@ -18,12 +18,12 @@ module.exports = NodeHelper.create({
 	socketNotificationReceived: function (notification, payload) {
 		const me = this;
 		let pins = { input: {}, output: {} };
-		let config = {};
+		let configData = {};
 
 		if (notification === "CONFIG" && me.started === false) {
 		  	let { input, output, ...confvals } = payload;
 			
-			config = confvals;
+			configData = confvals;
 
 		  	for (var pin in input) {
 				var pindata = input[String(pin)];
@@ -76,7 +76,7 @@ module.exports = NodeHelper.create({
 
 			if (pinConfig) {
 				// Roep de PWMHandler-functie aan
-				me.PWMHandler(pinConfig, config, pwmType, pwmSpeedState, pwmStep);
+				me.PWMHandler(pinConfig, configData, pwmType, pwmSpeedState, pwmStep);
 			} else {
 				console.error(`Pin ${pin} is not configured as an output pin.`);
 			}
@@ -86,7 +86,7 @@ module.exports = NodeHelper.create({
 			const pinConfig = pins.output[String(pin)];
 				
 			if (pinConfig) {
-				me.OnOffHandler(pinConfig, config, state);
+				me.OnOffHandler(pinConfig, configData, state);
 			} else{
 				console.error(`Pin ${pin} is not configured as an output pin.`);
 			}
@@ -228,11 +228,11 @@ module.exports = NodeHelper.create({
 			let pindata = pins[String(pin)];
 			switch (pindata.type) {
 				case "PWM":
-					this.PWMHandler(pins[String(pin)]);
+					this.PWMHandler(pins[String(pin)],config);
 					break;
 
 				case "On/Off":
-					this.OnOffHandler(pins[String(pin)]);
+					this.OnOffHandler(pins[String(pin)],config);
 					break;
 
 				default:
