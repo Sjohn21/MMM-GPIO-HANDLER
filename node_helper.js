@@ -18,10 +18,12 @@ module.exports = NodeHelper.create({
 	socketNotificationReceived: function (notification, payload) {
 		const me = this;
 		let pins = { input: {}, output: {} };
+		let config = {};
 
 		if (notification === "CONFIG" && me.started === false) {
 		  	let { input, output, ...confvals } = payload;
-		  
+			
+			config = confvals;
 
 		  	for (var pin in input) {
 				var pindata = input[String(pin)];
@@ -74,7 +76,7 @@ module.exports = NodeHelper.create({
 
 			if (pinConfig) {
 				// Roep de PWMHandler-functie aan
-				me.PWMHandler(pinConfig, me.config, pwmType, pwmSpeedState, pwmStep);
+				me.PWMHandler(pinConfig, config, pwmType, pwmSpeedState, pwmStep);
 			} else {
 				console.error(`Pin ${pin} is not configured as an output pin.`);
 			}
