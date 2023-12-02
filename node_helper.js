@@ -307,7 +307,7 @@ module.exports = NodeHelper.create({
 				throw new Error("Invalid state value. State must be 0 or 1.");
 			  }
 
-			pin.gpio.write(default_pin.state);
+			pin.gpio.write(state);
 		} catch (error){
 			console.error("On/Off handling error:", error.message);
 		}
