@@ -13,80 +13,74 @@ const pigpio = require('pigpio-client').pigpio({ host: 'localhost'});
 module.exports = NodeHelper.create({
 	start: function () {
 		this.started = false;
+		this.configDefaults = {};
+		this.pins = { input: {}, output: {} };
 	},
 	
 	socketNotificationReceived: function (notification, payload) {
 		const me = this;
-		let pins = { input: {}, output: {} };
-		let configData = {};
+		const { input, output, ...configDefaults } = payload;
 
 		if (notification === "CONFIG" && me.started === false) {
-		  	let { input, output, ...confvals } = payload;
 			
-			configData = confvals;
+			me.configDefaults = configDefaults;
 
-		  	for (var pin in input) {
-				var pindata = input[String(pin)];
+		  	for (const [pin, pindata] of Object.entries(input)) {
 				console.log(me.name + ": Registering input pin: " + pin + " for " + pindata.name);
-				pins.input[String(pin)] = {};
-				pins.input[String(pin)]["type"] = pindata.type;
-				pins.input[String(pin)]["name"] = pindata.name;
-				pins.input[String(pin)]["sysname"] = pindata.name.replace(/ /g, "_").toUpperCase();
-				pins.input[String(pin)]["pull"] = pindata.pull;
-				pins.input[String(pin)]["edge"] = pindata.edge;
 
-				// Initialize input GPIO using pigpio-client
-				pins.input[String(pin)]["gpio"] = pigpio.gpio(parseInt(pin, 10));
-				pins.input[String(pin)]["gpio"].modeSet('input');
+				me.pins.input[String(pin)] = {
+					type: pindata.type,
+					name: pindata.name,
+					sysname: pindata.name.replace(/ /g, "_").toUpperCase(),
+					pull: pindata.pull,
+					edge: pindata.edge,
+					gpio: pigpio.gpio(parseInt(pin, 10))
+				};
+				me.pins.input[String(pin)].gpio.modeSet('input');
 			}
 
-			for (var pin in output) {
-				var pindata = output[String(pin)];
+			for (const [pin, pindata] of Object.entries(output)) {
 				console.log(me.name + ": Registering output pin: " + pin + " for " + pindata.name);
-				pins.output[String(pin)] = {};
-				pins.output[String(pin)]["type"] = pindata.type;
-				pins.output[String(pin)]["name"] = pindata.name;
-
-				// Initialize output GPIO using pigpio-client
-				pins.output[String(pin)]["gpio"] = pigpio.gpio(parseInt(pin, 10));
-				pins.output[String(pin)]["gpio"].modeSet('output');
-
+				me.pins.output[String(pin)] = {
+					type: pindata.type,
+					name: pindata.name,
+					gpio: pigpio.gpio(parseInt(pin, 10))
+				};
+				me.pins.output[String(pin)].gpio.modeSet('output');
+	
 				if (pindata.type === "PWM") {
-				pins.output[String(pin)]["default_PWM_type"] = pindata.default_PWM_type ?? confvals.default_PWM_type;
-				if (pins.output[String(pin)]["default_PWM_type"] === "Pulse") {
-					pins.output[String(pin)]["default_PWM_pulse_speed"] = pindata.default_PWM_pulse_speed ?? confvals.default_PWM_pulse_speed;
-					pins.output[String(pin)]["default_PWM_pulse_step"] = pindata.default_PWM_pulse_step ?? confvals.default_PWM_pulse_step;
-				} else if (pins.output[String(pin)]["default_PWM_type"] === "Fixed") {
-					pins.output[String(pin)]["default_PWM_state"] = pindata.default_state ?? confvals.default_state;
-				}
+					me.pins.output[String(pin)]["default_PWM_type"] = pindata.default_PWM_type ?? me.configDefaults.default_PWM_type;
+					if (pindata.default_PWM_type === "Pulse") {
+						me.pins.output[String(pin)]["default_PWM_pulse_speed"] = pindata.default_PWM_pulse_speed ?? me.configDefaults.default_PWM_pulse_speed;
+						me.pins.output[String(pin)]["default_PWM_pulse_step"] = pindata.default_PWM_pulse_step ?? me.configDefaults.default_PWM_pulse_step;
+					} else if (pindata.default_PWM_type === "Fixed") {
+						me.pins.output[String(pin)]["default_PWM_state"] = pindata.default_state ?? me.configDefaults.default_state;
+					}
 				} else {
-				pins.output[String(pin)]["default_state"] = pindata.default_state ?? confvals.default_state;
+					me.pins.output[String(pin)]["default_state"] = pindata.default_state ?? me.configDefaults.default_state;
 				}
 			}
 
 			console.log(me.name + ": All pins in configuration are registered.");
 
-			this.inputHandler(pins.input, confvals);
-			this.initializeOutputs(pins.output, confvals);
+			this.inputHandler();
+			this.initializeOutputs();
 			me.started = true;
 
 		} else if (notification === "HANDLE_PWM" && me.started === true) {
 			const { pin, pwmType, pwmSpeedState, pwmStep } = payload;
-			const pinConfig = pins.output[String(pin)];
 
-			if (pinConfig) {
-				// Roep de PWMHandler-functie aan
-				me.PWMHandler(pinConfig, configData, pwmType, pwmSpeedState, pwmStep);
+			if (me.pins.output[String(pin)]) {
+				me.PWMHandler(pin, pwmType, pwmSpeedState, pwmStep);
 			} else {
 				console.error(`Pin ${pin} is not configured as an output pin.`);
 			}
 
 		} else if (notification === "HANDLE_ON/OFF" && me.started === true) {
 			const { pin, state } = payload;
-			const pinConfig = pins.output[String(pin)];
 				
-			if (pinConfig) {
-				me.OnOffHandler(pinConfig, configData, state);
+			if (me.pins.output[String(pin)]) {
+				me.OnOffHandler(pin, state);
 			} else{
 				console.error(`Pin ${pin} is not configured as an output pin.`);
 			}
@@ -100,12 +94,10 @@ module.exports = NodeHelper.create({
 		}
 	},
 
-	inputHandler: function (pins, config) {
+	inputHandler: function () {
 		const me = this;
-		for (var pin in pins) {
-			let pindata = pins[String(pin)];
-		
-			// Set pull-up/pull-down resistor using pigpio-client
+		for (const [pin, pindata] of Object.entries(me.pins.input)) {
+
 			switch (pindata.pull) {
 			  case "PUD_DOWN":
 				pindata.gpio.pullUpDown(1);
@@ -119,7 +111,7 @@ module.exports = NodeHelper.create({
 
 			switch (pindata.type) {
 				case "Button":
-					pindata.gpio.glitchSet(config.debounce);
+					pindata.gpio.glitchSet(me.configDefaults.debounce);
 					let startTick;
 					let timeout = undefined;
 			
@@ -128,10 +120,10 @@ module.exports = NodeHelper.create({
 							if (level == 0) {
 							startTick = tick;
 							timeout = setTimeout(() => {
-								console.log("Button '" + pindata.name + "' is pressed longer than " + Math.round((config.longPressTimeOut / 1000000) * 10) / 10 + " seconds. Is it stuck?");
+								console.log("Button '" + pindata.name + "' is pressed longer than " + Math.round((me.configDefaults.longPressTimeOut / 1000000) * 10) / 10 + " seconds. Is it stuck?");
 								me.sendSocketNotification(pindata.sysname + "_LONG_PRESSED");
-								me.sendSocketNotification("ALERT", "Button '" + pindata.name + "' is pressed longer than " + Math.round((config.longPressTimeOut / 1000000) * 10) / 10 + " seconds. A long press is sent, but is it stuck?");
-							}, config.longPressTimeOut / 1000);
+								me.sendSocketNotification("ALERT", "Button '" + pindata.name + "' is pressed longer than " + Math.round((me.configDefaults.longPressTimeOut / 1000000) * 10) / 10 + " seconds. A long press is sent, but is it stuck?");
+							}, me.configDefaults.longPressTimeOut / 1000);
 				
 							console.log("Button '" + pindata.name + "' is pressed.");
 							} else {
@@ -140,10 +132,10 @@ module.exports = NodeHelper.create({
 								const diff = (endTick >> 0) - (startTick >> 0);
 								console.log("Button '" + pindata.name + "' is released.");
 								
-								if (diff < config.longPressTime) {
+								if (diff < me.configDefaults.longPressTime) {
 									me.sendSocketNotification(pindata.sysname + "_SHORT_PRESSED");
 									console.log("Button '" + pindata.name + "' was pressed only short.");
-								} else if (diff > config.longPressTime && diff < config.longPressTimeOut) {
+								} else if (diff > me.configDefaults.longPressTime && diff < me.configDefaults.longPressTimeOutt) {
 									me.sendSocketNotification(pindata.sysname + "_LONG_PRESSED");
 									console.log("Button '" + pindata.name + "' was pressed long.");
 								}
@@ -153,10 +145,10 @@ module.exports = NodeHelper.create({
 							if(level == 1){
 								startTick = tick;
 								timeout = setTimeout(() => {
-									console.log("Button '" + pindata.name + "' is pressed longer than "+ Math.round((config.longPressTimeOut/1000000)*10)/10 +" seconds. Is it stuck?");
+									console.log("Button '" + pindata.name + "' is pressed longer than "+ Math.round((me.configDefaults.longPressTimeOut/1000000)*10)/10 +" seconds. Is it stuck?");
 									me.sendSocketNotification(pindata.sysname + "_LONG_PRESSED");
-									me.sendSocketNotification("ALERT","Button '" + pindata.name + "' is pressed longer than "+ Math.round((config.longPressTimeOut/1000000)*10)/10 +" seconds. A long press is send, but is it stuck?");
-								}, config.longPressTimeOut / 1000);
+									me.sendSocketNotification("ALERT","Button '" + pindata.name + "' is pressed longer than "+ Math.round((me.configDefaults.longPressTimeOut/1000000)*10)/10 +" seconds. A long press is send, but is it stuck?");
+								}, me.configDefaults.longPressTimeOut / 1000);
 								
 								console.log("Button '" + pindata.name + "' is pressed.");
 							} else {
@@ -165,10 +157,10 @@ module.exports = NodeHelper.create({
 								const diff = (endTick >> 0) - (startTick >> 0);
 								console.log("Button '" + pindata.name + "' is released.");
 
-								if(diff < config.longPressTime){
+								if(diff < me.configDefaults.longPressTime){
 									me.sendSocketNotification(pindata.sysname + "_SHORT_PRESSED");
 									console.log("Button '" + pindata.name + "' was pressed only short.");
-								} else if(diff > config.longPressTime && diff < config.longPressTimeOut){
+								} else if(diff > me.configDefaults.longPressTime && diff < me.configDefaults.longPressTimeOut){
 									me.sendSocketNotification(pindata.sysname + "_LONG_PRESSED");
 									console.log("Button '" + pindata.name + "' was pressed long.");
 								}
@@ -222,17 +214,16 @@ module.exports = NodeHelper.create({
 		}
 	},
 
-	initializeOutputs: function (pins, config) {
+	initializeOutputs: function () {
 		const me = this;
-		for (var pin in pins) {
-			let pindata = pins[String(pin)];
+		for (const [pin, pindata] of Object.entries(me.pins.output)) {
 			switch (pindata.type) {
 				case "PWM":
-					this.PWMHandler(pins[String(pin)],config);
+					this.PWMHandler(pin);
 					break;
 
 				case "On/Off":
-					this.OnOffHandler(pins[String(pin)],config);
+					this.OnOffHandler(pin);
 					break;
 
 				default:
@@ -242,17 +233,19 @@ module.exports = NodeHelper.create({
 		}
 	},
 
-	PWMHandler: function (pin, config, pwmType, pwmSpeedState, pwmStep) {
+	PWMHandler: function (pin, pwmType, pwmSpeedState, pwmStep) {
+		const me = this;
 		try {
-			const type = pwmType || pin.default_PWM_type || config.default_PWM_type;
-			const speed = pwmSpeedState || pin.default_PWM_pulse_speed || config.default_PWM_pulse_speed;
-			const step = pwmStep || pin.default_PWM_pulse_step || config.default_PWM_pulse_step;
-			const state = pwmSpeedState || pin.default_PWM_state || config.default_PWM_state;
-			
-			if (!pin.gpio) {
+			const pinData = me.pins.output[String(pin)];
+			const type = pwmType ?? pinData.default_PWM_type ?? me.configDefaults.default_PWM_type;
+			const speed = pwmSpeedState ?? pinData.default_PWM_pulse_speed ?? me.configDefaults.default_PWM_pulse_speed;
+			const step = pwmStep ?? pinData.default_PWM_pulse_step ?? me.configDefaults.default_PWM_pulse_step;
+			const state = pwmSpeedState ?? pinData.default_PWM_state ?? me.configDefaults.default_state;
+				
+			if (!pinData.gpio) {
 				throw new Error("Pin not initialized for GPIO.");
 			}
-			if (pin.type !== "PWM" ) {
+			if (pinData.type !== "PWM" ) {
 				throw new Error("Pin not configured for PWM.");
 			}
 
@@ -265,7 +258,7 @@ module.exports = NodeHelper.create({
 				let dir = 1;
 
 				setInterval(() => {
-					pin.gpio.analogWrite(dutyCycle);
+					pinData.gpio.analogWrite(dutyCycle);
 					
 					if(dir == 1){
 						dutyCycle += step;
@@ -285,7 +278,7 @@ module.exports = NodeHelper.create({
 				if (typeof state !== "number" || state <1 || state > 255) {
 					throw new Error("Invalid state value for PWM fixed.");
 				}
-				pin.gpio.analogWrite(state);
+				pinData.gpio.analogWrite(state);
 			} else {
 				throw new Error("Invalid PWM type specified.");
 			}
@@ -295,11 +288,13 @@ module.exports = NodeHelper.create({
 			// add Hardware PWM support?
 	},
 
-	OnOffHandler: function (pin, config, specState) {
+	OnOffHandler: function (pin, specState) {
+		const me = this;
 		try{
-			const state = specState || pin.default_state || config.default_state;
+			const pinData = me.pins.output[String(pin)];
+			const state = specState ?? pinData.default_state ?? me.configDefaults.default_state;
 
-			if (!pin.gpio) {
+			if (!pinData.gpio) {
 				throw new Error("Pin not initialized for GPIO.");
 			}
 
@@ -307,7 +302,7 @@ module.exports = NodeHelper.create({
 				throw new Error("Invalid state value. State must be 0 or 1.");
 			  }
 
-			pin.gpio.write(state);
+			pinData.gpio.write(state);
 		} catch (error){
 			console.error("On/Off handling error:", error.message);
 		}
