@@ -10,15 +10,17 @@
 Module.register('MMM-GPIO-HANDLER',{	
 	requiresVersion: "2.1.0",
 	defaults: {
-		debounce: 10000,
-		longPressTime: 500000,
-		longPressTimeOut: 3000000,
 		input: {},
 		output: {},
-		default_state: 0,
-		default_PWM_type: "Fixed",
-		default_PWM_pulse_speed: 50,
-		default_PWM_pulse_step: 10
+		debounce: 10,
+		longPressTime: 500,
+		longPressTimeOut: 3000,
+		default_PWM_effect: "Fixed",
+		default_PWM_speed: 50, 
+		default_PWM_steps: 10,
+		default_PWM_state: 0,
+		default_HardwarePWM_Frequency: 0,
+		default_state: 0
 	},
 	
 	start: function(){

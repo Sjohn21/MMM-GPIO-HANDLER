@@ -11,7 +11,7 @@
 		"GPIO",
 		"Input",
 		"Output",
-		"Pigpio",
+		"Pigpio-client",
 		"Buttons",
 		"PIR",
 		"PWM",
@@ -25,6 +25,6 @@
 	},
 	"homepage": "https://github.com/Sjohn21/MMM-GPIO-HANDLER#readme",
 	"dependencies": {
-		"pigpio": "3.3.1"
+		"pigpio-client": "1.5.2"
 	}
 }
