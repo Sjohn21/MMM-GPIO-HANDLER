@@ -13,8 +13,15 @@ This module is work in progress and needs testing before stating it is maintaine
   * [Module Configuration](#Module-Configuration)
   * [Input Configuration](#Input-Configuration)
   * [Output Configuration](#Output-Configuration)
-*  [Usage](#Usage)
-
+* [Usage](#Usage)
+  * [Input usage](#Input-usage)
+    * [Buttons](#Buttons)
+	* [PIR](#PIR)
+	* [Other](#Other)
+  * [Output usage](#Output-usage)
+    * [HANDLE_ON/OFF notification payload](#HANDLE_ON/OFF-notification-payload)
+	* [HANDLE_PWM notification payload](#HANDLE_PWM-notification-payload)
+* [Credits](#Credits)
 
 # Concept / Background
 While building my Mirror I could not find a module that support [PWM](https://en.wikipedia.org/wiki/Pulse-width_modulation) (Pulse Width Modulation) and/or handle GPIO as a whole (input & output).
@@ -27,22 +34,24 @@ This module supports:
 * Input handling of buttons (short & long press), PIR, Other.
 
 The module sends a Notification if an input is changed, which can be used to start actions in other modules.  
-The module starts output handling when an HANDLE_PWM or HANDLE_ON/OFF notification is received. Payload sets the options.
+The module starts output handling form defaults set or when an HANDLE_PWM or HANDLE_ON/OFF notification is received. Payload in notification sets the options.
 
 # Dependencies
-The module depends on the use of the [socket interface](https://abyz.me.uk/rpi/pigpio/sif.html) of the [pigpio library](https://abyz.me.uk/rpi/pigpio/index.html). It works by launching the [pigpio Deamon](https://abyz.me.uk/rpi/pigpio/pigpiod.html) and exposing the socket interface.  
-The pigpiod utility requires sudo privileges to launch the library but thereafter the pipe and socket commands may be issued by normal users (e.g. MagicMirror).  
-On Raspbian/Raspberry Pi OS these utilities are normally already installed. To check you can run:
+The module depends on the use of the [socket interface](https://abyz.me.uk/rpi/pigpio/sif.html) of the [pigpio library](https://abyz.me.uk/rpi/pigpio/index.html). It works by launching the [pigpio Deamon](https://abyz.me.uk/rpi/pigpio/pigpiod.html) and exposing the socket interface.
+The pigpiod utility requires sudo privileges to launch the library but thereafter the socket commands may be issued by normal users (e.g. MagicMirror).
+
+On Raspbian/Raspberry Pi OS these utilities are normally already installed. To check you can run
 ```bash
 pigpiod -v
 ```
-It will show the version.  
+It will show the version if it is installed.
+
 If not installed on Raspbian/Raspberry Pi OS you can run
 ```bash
 sudo apt-get update
 sudo apt-get install pigpio
 ```
-On other OS if the above not works, or if for some reason not the latest package is installed and you need the latest package, you'll need the build-essential package:
+On other OS if the above not works, or if for some reason not the latest version of the package is installed and you need the latest package, you'll need the build-essential package:
 ```bash
 sudo apt-get install build-essential
 ```
@@ -56,6 +65,7 @@ cd pigpio-master
 make
 sudo make install
 ```
+
 
 Additionally, the [pigpio-client](https://github.com/guymcswain/pigpio-client#readme) is installed from dependecies to expose the socket interface APIs to javascript using nodejs.
 
@@ -71,7 +81,7 @@ npm install
 ```
 
 # Configuration
-Add the module to your modules array in your `config.js`. Full list of configurable options can be found below the example.
+Add the module to your modules array in your `config.js`. Full list of configurable options can be found in [Module Configuration](#Module-Configuration).
 
 ## Example Configuration
 Below is a simple example, with two buttons connected on pins 24 & 25 [(one with internal pull-up resistor and one with internall pull-down resistor active)](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#inputs), one PIR sensor on pin 14 (with pull-up resistor) and one unspecified/other sensor on pin 8 as inputs. The example has 5 outputs defined, one (software) PWM output with a fixed state (250000) for dutyCycle on pin 4, one hardwarePWM output with an effect of type Pulse using a speed of 50ms between changes and in 50 steps (of complete dutyCycle) on pin 12, an On/Off output with a default state of 1 on pin 15, an On/Off output with a default state of 0 on pin 10 and finally a (software) PWM output with an effect of type Breath using a speed of 50ms between changes and in 10 steps given a certain bandwitdh of dutyCycle between minimum 20% and maximum 80% of dutyCycle.
@@ -220,32 +230,35 @@ The human readable name will be converted to a system name converted to all uppe
 ### Buttons
 The pull can be set as per [Input Configuration](#Input-Configuration), if the Pull is set to `PUD_UP` and the level (3.3v) changes to 0 the notification will trigger. Likewise when the Pull is set to `PUD_DOWN` or not set and the level (3.3v) changes to 1.  
 If the button is hold longer than `longPressTime` a long press notification will be send, if the button is hold shorter than this time a short press notification will be send. If the button is hold longer than `longPressTimeOut` a long press notification will be send at `longPressTimeOut` nonetheless and an Alert will be send to notify the user if the button might be stuck.  
-Notifications are formatted as: `<<systemname>>_LONG_PRESSED` and `<<systemname>>_SHORT_PRESSED`. E.g. if the Button is named `Button 1` the notifications will be `BUTTON_1_LONG_PRESSED` and `BUTTON_1_SHORT_PRESSED`.
+Notifications are formatted as: `<<systemname>>_LONG_PRESSED` and `<<systemname>>_SHORT_PRESSED`.  
+E.g. if the Button is named `Button 1` the notifications will be `BUTTON_1_LONG_PRESSED` and `BUTTON_1_SHORT_PRESSED`.
 
 ### PIR
 The pull can be set as per [Input Configuration](#Input-Configuration), if the Pull is set to `PUD_UP` and the level (3.3v) changes to 0 the detection notification will trigger. Likewise when the Pull is set to `PUD_DOWN` or not set and the level (3.3v) changes to 1. A no detection notification will trigger when the level changes the other way around.  
-Notifications are formatted as: `<<systemname>>_DETECTION` and `<<systemname>>_NO_DETECTION`. E.g. if the PIR sensor is named `Pir Sensor` the notifications will be `PIR_SENSOR_DETECTION` and `PIR_SENSOR_NO_DETECTION`.
+Notifications are formatted as: `<<systemname>>_DETECTION` and `<<systemname>>_NO_DETECTION`.  
+E.g. if the PIR sensor is named `Pir Sensor` the notifications will be `PIR_SENSOR_DETECTION` and `PIR_SENSOR_NO_DETECTION`.
 
 ### Other
 If something else than a button or PIR is connected, the `other` option cna be used. When the level (3.3v) changes to 1 a high notification will be send, when the level (3.3v) changes to 0 a low notification will be send. When the level (3.3v) changes to something else a floating notification will be send.  
-otifications are formatted as: `<<systemname>>_HIGH`, `<<systemname>>_LOW` and `<<systemname>>_FLOATING`. E.g. if the sensor is named `Other type of Sensor` he notifications will be `OTHER_TYPE_OF_SENSOR_HIGH`, `OTHER_TYPE_OF_SENSOR_LOW` and `OTHER_TYPE_OF_SENSOR_FLOATING`.
+otifications are formatted as: `<<systemname>>_HIGH`, `<<systemname>>_LOW` and `<<systemname>>_FLOATING`.  
+E.g. if the sensor is named `Other type of Sensor` he notifications will be `OTHER_TYPE_OF_SENSOR_HIGH`, `OTHER_TYPE_OF_SENSOR_LOW` and `OTHER_TYPE_OF_SENSOR_FLOATING`.
 
 ## Output usage
-When all outputs are configured, the defaults set on the outputs will run once the module is started. E.g. if pin 17 is configured as:
+When all outputs are configured, the defaults set on the outputs will run once the module is started. E.g. if globally `default_PWM_cycles` is set to `10` cycles and pin 17 is configured as:
 ```js
 "17": {
-				type: "PWM",
-				name: "Button 7 LED FET",
-				default_PWM_effect: "Breath",
-				default_PWM_speed: 50,
-				default_PWM_steps: 10,
-				default_PWM_upperLimitDCP: 80,
-				default_PWM_lowerLimitDCP: 20
-			}
+	type: "PWM",
+	name: "Button 7 LED FET",
+	default_PWM_effect: "Breath",
+	default_PWM_speed: 50,
+	default_PWM_steps: 10,
+	default_PWM_upperLimitDCP: 80,
+	default_PWM_lowerLimitDCP: 20
+}
 ```
-and globally `default_PWM_cycles` is set to `10` cycles the led (in this case a led on a button) will run the the `Breath` effect with a changing speed of `50` and in `10` steps between a max dutyCycle of `80` percent and a min dutyCycle of `20` percent.
+the led (in this case a led on a button) will run the the `Breath` effect with a changing speed of `50` and in `10` steps between a max dutyCycle of `80` percent and a min dutyCycle of `20` percent.
 
-Additionally, Outputs can be changed by notifications. The `HANDLE_PWM` and `HANDLE_ON/OFF` notification are read by the module and a `payload` set the options.
+Additionally, Outputs can be changed by notifications. The `HANDLE_PWM` and `HANDLE_ON/OFF` notification are read by the module and a `payload` set the options. See next paragraphs.
 
 ### HANDLE_ON/OFF notification payload
 The `HANDLE_ON/OFF` notification should be accompanied by an object in the payload. The object options are:
