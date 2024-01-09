@@ -66,6 +66,7 @@ module.exports = NodeHelper.create({
 					default_PWM_endOn: isPwm ? pinData.default_PWM_endOn ?? me.configDefaults.default_PWM_endOn : undefined,
 					default_PWM_endPrevOn: isPwm ? pinData.default_PWM_endPrevOn ?? me.configDefaults.default_PWM_endPrevOn : undefined,
 					default_PWM_state: isPwm ? pinData.default_PWM_state ?? me.configDefaults.default_PWM_state : undefined,
+					pwmEffect: isPwm ? { } : undefined,
 					default_state: !isPwm ? pinData.default_state ?? me.configDefaults.default_state : undefined,			
 					default_hardwarePWM_frequency: isHardwarePwm ? pinData.default_hardwarePWM_frequency ?? me.configDefaults.default_hardwarePWM_frequency : undefined
 				};
@@ -73,16 +74,17 @@ module.exports = NodeHelper.create({
 			}
 
 			console.log(`${me.name}: All pins in configuration are registered.`);
+			me.sendSocketNotification("SHOW_ALERT",`${me.name}: All pins in configuration are registered.`);
 
 			this.inputHandler();
 			this.initializeOutputs();
 			me.started = true;
 		} else if (notification === "HANDLE_PWM" && me.started === true) {
 			const pinStr = String(payload.pin);
-			me.pins.output[pinStr] ? me.PWMHandler(payload) : console.error(`Pin ${pinStr} is not configured as an output pin.`);
+			me.pins.output[pinStr] ? me.PWMHandler(payload) : (console.error(`Pin ${pinStr} is not configured as an output pin.`), me.sendSocketNotification("SHOW_ALERT",`Pin ${pinStr} is not configured as an output pin.`));
 		} else if (notification === "HANDLE_ON/OFF" && me.started === true) {
 			const pinStr = String(payload.pin);
-			me.pins.output[pinStr] ? me.OnOffHandler(payload) : console.error(`Pin ${pinStr} is not configured as an output pin.`);
+			me.pins.output[pinStr] ? me.OnOffHandler(payload) : (console.error(`Pin ${pinStr} is not configured as an output pin.`), me.sendSocketNotification("SHOW_ALERT",`Pin ${pinStr} is not configured as an output pin.`));
 		} else if (notification !== "CONFIG" && me.started === false) {
 			me.sendSocketNotification("SHOW_ALERT",`Notification '${notification}' received, but MMM-GPIO-HANDLER is not (completely) initialized yet.`);
 			console.warn(`Notification '${notification}' received, but MMM-GPIO-HANDLER is not (completely) initialized yet.`);
@@ -178,11 +180,11 @@ module.exports = NodeHelper.create({
 			switch (pinData.type) {
 				case "PWM":
 				case "hardwarePWM":
-					this.PWMHandler(pin);
+					this.PWMHandler({"pin": pin});
 					break;
 
 				case "On/Off":
-					this.OnOffHandler(pin);
+					this.OnOffHandler({"pin": pin});
 					break;
 
 				default:
@@ -213,7 +215,7 @@ module.exports = NodeHelper.create({
 			const minDutyCycle = 0;
 
 			if (!pinData.gpio) throw new Error("Pin not initialized for GPIO.");
-			if ("PWM" !== pinData.type || "hardwarePWM" !== pinData.type) throw new Error("Pin not configured for PWM.");
+			if (pinData.type !== "PWM" && pinData.type !== "hardwarePWM") throw new Error("Pin not configured for PWM.");
 			if ("number" != typeof upperLimitDCP || upperLimitDCP < 0 || upperLimitDCP > 100 || "number" != typeof lowerLimitDCP || lowerLimitDCP < 0 || lowerLimitDCP > 100 || upperLimitDCP <= lowerLimitDCP) throw new Error("Invalid values. upperLimitDCP and lowerLimitDCP should be numbers between 0 and 100 (percentage), and upperLimitDCP should be greater than lowerLimitDCP.");
 
 			function setDutyCycle(dutyCycle) {
@@ -227,7 +229,7 @@ module.exports = NodeHelper.create({
 			function newEffect() {
 				clearInterval(pinData.pwmEffect.interval);
 				clearTimeout(pinData.pwmEffect.timeout);
-				delete pinData.pwmEffect;
+				for (var obj in pinData.pwmEffect) delete pinData.pwmEffect[obj];
 
 				const upperLimitDC = Math.round(upperLimitDCP * maxDutyCycle / 100);
 				const lowerLimitDC = Math.round(lowerLimitDCP * maxDutyCycle / 100);
@@ -273,7 +275,7 @@ module.exports = NodeHelper.create({
 				
 						if (cycles !== -1 && cycleCount >= cycles && Math.abs(dutyCycle - endDutyCycle) === 0) { 
 							clearInterval(pinData.pwmEffect.interval); 
-							delete pinData.pwmEffect;
+							for (var obj in pinData.pwmEffect) delete pinData.pwmEffect[obj];
 						}
 					}, speed);
 				} else if (effect === "Pulse"){
@@ -312,12 +314,12 @@ module.exports = NodeHelper.create({
 		
 						if (cycles !== -1 && cycleCount >= cycles && Math.abs(dutyCycle - endDutyCycle) <= tolerance) {
 							clearInterval(pinData.pwmEffect.interval); 
-							delete pinData.pwmEffect;
+							for (var obj in pinData.pwmEffect) delete pinData.pwmEffect[obj];
 							setDutyCycle(dutyCycle);
 						}
 					}, speed); 
 				} else if (effect === "Flash"){
-					if (typeof speed !== "number" || typeof flashLength !== "number" || speed < 4 || flashLength < 4 || flashLength <= speed) throw new Error("Invalid speed or flashLength value for PWM Flash, and speed should be greater than flashLength.");
+					if (typeof speed !== "number" || typeof flashLength !== "number" || speed < 4 || flashLength < 4 || flashLength >= speed) throw new Error("Invalid speed or flashLength value for PWM Flash, and speed should be greater than flashLength.");
 
 					pinData.pwmEffect.type = effect;
 					pinData.pwmEffect.speed = speed;
@@ -329,6 +331,7 @@ module.exports = NodeHelper.create({
 					};
 					
 					pinData.pwmEffect.interval = setInterval(() => {
+						dutyCycle = startOn === "high" ? upperLimitDC : lowerLimitDC;
 						setDutyCycle(dutyCycle);
 						updateExtreme();
 						pinData.pwmEffect.timeout = setTimeout(() => {
@@ -347,9 +350,8 @@ module.exports = NodeHelper.create({
 										clearTimeout(pinData.pwmEffect.timeout);
 									}, startOn === "high" ? flashLow : flashLength );
 								}
-								delete pinData.pwmEffect;
+								for (var obj in pinData.pwmEffect) delete pinData.pwmEffect[obj];
 							}
-
 						}, timer);
 					}, speed);
 				} else if (effect === "Fade-in" || effect === "Fade-out"){
@@ -374,12 +376,12 @@ module.exports = NodeHelper.create({
 							dutyCycle = endDC;
 							setDutyCycle(dutyCycle);
 							clearInterval(pinData.pwmEffect.interval);
-							delete pinData.pwmEffect;
+							for (var obj in pinData.pwmEffect) delete pinData.pwmEffect[obj];
 						}
 					}, speed);
 				} else if (effect === "Fixed"){
 					if (typeof state !== "number" || state < minDutyCycle || state > maxDutyCycle) throw new Error("Invalid state value for PWM fixed.");
-					setDutyCycle(dutyCycle);
+					setDutyCycle(state);
 				} else {
 					throw new Error("Invalid PWM type specified.");
 				}
