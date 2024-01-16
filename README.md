@@ -1,8 +1,8 @@
 # MMM-GPIO-HANDLER
 [MagicMirror²](https://github.com/MichMich/MagicMirror/) module to handle GPIO Input and Output, including PWM functions.
 
-## WIP
-This module is work in progress and needs testing before stating it is maintained and usable.
+## Maintained
+This module works and is currently maintained. Any suggestions/improvements are welcome.
 
 # Contents
 * [Concept / Background](#Concept-/-Background)
@@ -263,16 +263,31 @@ Additionally, Outputs can be changed by notifications. The `HANDLE_PWM` and `HAN
 ### HANDLE_ON/OFF notification payload
 The `HANDLE_ON/OFF` notification should be accompanied by an object in the payload. The object options are:
 
-| Option  | Type   | Requirement | Description              |
-| ------- | ------ | ----------- | ------------------------ |
-| `pin`   | `uint` | `required`  | The pin to change state  |
-| `state` | `uint` | `required`  | The new state `0` or `1` |
+| Option   | Type     | Requirement | Description                                                                                                          |
+| -------- | -------- | ----------- | -------------------------------------------------------------------------------------------------------------------- |
+| `pin`    | `uint`   | `required`  | The pin to apply `action` to                                                                                         |
+| `action` | `string` | `required`  | The action, should be `set`, `toggle` or `trigger`                                                                   |
+| `state`  | `uint`   | `required*` | The new state `0` or `1`, only required for the action `set`                                                         |
+| `level`  | `uint`   | `required*` | The level for the trigger `0` or `1`, only required for the action `trigger`                                         |
+| `length` | `uint`   | `required*` | In Mircroseconds, the length of how long the trigger pulse of `level`is send, only required for the action `trigger` |
 
-Example payload:
+The `set` action sets the output pin to the `state` given. The `toggle` action changes the state, if it was 0 it will be set 1 and vice versa. The `trigger` action send a short pulse of `level` for `length` microseconds.
+
+Examples of payload:
 ```js
 {
 	"pin" : 10,
+	"action" : "set",
 	"state" : 1
+}
+```
+and
+```js
+{
+	"pin" : 10,
+	"action" : "trigger",
+	"level" : 1,
+	"length" : 100000  //0.1 second
 }
 ```
 

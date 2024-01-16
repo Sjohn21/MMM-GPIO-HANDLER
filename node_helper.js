@@ -184,7 +184,7 @@ module.exports = NodeHelper.create({
 					break;
 
 				case "On/Off":
-					this.OnOffHandler({"pin": pin});
+					this.OnOffHandler({"pin": pin, "action": "set"});
 					break;
 
 				default:
@@ -450,17 +450,48 @@ module.exports = NodeHelper.create({
 		const me = this;
 		try{
 			const pinData = me.pins.output[String(payload.pin)];
-			const state = payload.state ?? pinData.default_state ?? me.configDefaults.default_state;
-
+			const action = payload.action; 
+			
 			if (!pinData.gpio) {
 				throw new Error("Pin not initialized for GPIO.");
 			}
 
-			if (state !== 0 && state !== 1) {
-				throw new Error("Invalid state value. State must be 0 or 1.");
-			  }
+			if (action === undefined) {
+				throw new Error("No action specified. It is not possible to change outputs.");
+			}
 
-			pinData.gpio.write(state);
+			switch (action){
+				case "set":
+					const state = payload.state ?? pinData.default_state ?? me.configDefaults.default_state;
+					if (state !== 0 && state !== 1) {
+						throw new Error("Invalid state value. State must be 0 or 1.");
+					}
+					pinData.gpio.write(state);
+					break;
+				case "toggle":
+					pinData.gpio.read((err, value) => {
+						if (err) {
+							console.error("Error reading pin:", err.message);
+							me.sendSocketNotification("SHOW_ALERT", err.message);
+							return;
+						}
+						pinData.gpio.write(value ^ 1);
+					});
+					break;
+				case "trigger":
+					const length = payload.length;
+					const level = payload.level;
+					if (typeof length !== "number" || length <= 0) {
+						throw new Error("Invalid length value. Length must be a positive number.");
+					}
+					if (level !== 0 && level !== 1) {
+						throw new Error("Invalid level value. Level must be 0 or 1.");
+					}
+					pinData.gpio.trigger(length, level); 
+					break;
+				default:
+					throw new Error(`Invalid action: ${action}. Valid actions are "set", "toggle", and "trigger".`);
+			}			
 		} catch (error){
 			console.error("On/Off handling error:", error.message);
 			me.sendSocketNotification("SHOW_ALERT", error.message);
