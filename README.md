@@ -24,34 +24,34 @@ This module works and is currently maintained. Any suggestions/improvements are 
 * [Credits](#Credits)
 
 # Concept / Background
-While building my Mirror I could not find a module that support [PWM](https://en.wikipedia.org/wiki/Pulse-width_modulation) (Pulse Width Modulation) and/or handle GPIO as a whole (input & output).
-The Mirror had leds and ledstrips installed according [this](https://dordnung.de/raspberrypi-ledstrip/) intruction (with MOSFETs).
+While building my Mirror, I could not find a module that supports [PWM](https://en.wikipedia.org/wiki/Pulse-width_modulation) (Pulse Width Modulation) and/or handles GPIO as a whole (input & output).
+The Mirror had LEDs and LED strips installed according to [this](https://dordnung.de/raspberrypi-ledstrip/) instruction (with MOSFETs).
 Though the instructions do not mention PWM explicitly, the concept uses Software PWM.
 
 This module supports:
-* Both Hardware and Software PWM and some PWM effects, mostly optimized for LEDs. (Breath, Pulse, Flash, Fade-in, Fad-out).
+* Both Hardware and Software PWM and some PWM effects, mostly optimized for LEDs. (Breath, Pulse, Flash, Fade-in, Fade-out).
 * On/off handling of outputs (1/0 state, not using PWM).
 * Input handling of buttons (short & long press), PIR, Other.
 
-The module sends a Notification if an input is changed, which can be used to start actions in other modules.  
-The module starts output handling form defaults set or when an HANDLE_PWM or HANDLE_ON/OFF notification is received. Payload in notification sets the options.
+The module sends a Notification if an input is changed, which can be used to start actions in other modules.
+The module starts output handling from defaults set or when a HANDLE_PWM or HANDLE_ON/OFF notification is received. Payload in notification sets the options.
 
 # Dependencies
-The module depends on the use of the [socket interface](https://abyz.me.uk/rpi/pigpio/sif.html) of the [pigpio library](https://abyz.me.uk/rpi/pigpio/index.html). It works by launching the [pigpio Deamon](https://abyz.me.uk/rpi/pigpio/pigpiod.html) and exposing the socket interface.
-The pigpiod utility requires sudo privileges to launch the library but thereafter the socket commands may be issued by normal users (e.g. MagicMirror).
+The module depends on the use of the [socket interface](https://abyz.me.uk/rpi/pigpio/sif.html) of the [pigpio library](https://abyz.me.uk/rpi/pigpio/index.html). It works by launching the [pigpio Daemon](https://abyz.me.uk/rpi/pigpio/pigpiod.html) and exposing the socket interface.
+The pigpiod utility requires sudo privileges to launch the library but thereafter the socket commands may be issued by normal users (e.g., MagicMirror).
 
-On Raspbian/Raspberry Pi OS these utilities are normally already installed. To check you can run
+On Raspbian/Raspberry Pi OS, these utilities are normally already installed. To check, you can run
 ```bash
 pigpiod -v
 ```
 It will show the version if it is installed.
 
-If not installed on Raspbian/Raspberry Pi OS you can run
+If not installed on Raspbian/Raspberry Pi OS, you can run:
 ```bash
 sudo apt-get update
 sudo apt-get install pigpio
 ```
-On other OS if the above not works, or if for some reason not the latest version of the package is installed and you need the latest package, you'll need the build-essential package:
+On other OS, if the above does not work, or if, for some reason, the latest version of the package is not installed and you need the latest package, you'll need the build-essential package:
 ```bash
 sudo apt-get install build-essential
 ```
@@ -67,12 +67,12 @@ sudo make install
 ```
 
 
-Additionally, the [pigpio-client](https://github.com/guymcswain/pigpio-client#readme) is installed from dependecies to expose the socket interface APIs to javascript using nodejs.
+Additionally, the [pigpio-client](https://github.com/guymcswain/pigpio-client#readme) is installed from dependencies to expose the socket interface APIs to JavaScript using Node.js.
 
-Lastly, the module sends alerts in some cases. For this the defautl module [Alert](https://docs.magicmirror.builders/modules/alert.html) should be configured.
+Lastly, the module sends alerts in some cases. For this, the default module [Alert](https://docs.magicmirror.builders/modules/alert.html) should be configured.
 
 # Installation
-Clone this repository in your `modules` folder, and install dependencies:
+Clone this repository into your `modules` folder, and install dependencies:
 ```bash
 cd ~/MagicMirror/modules # adapt directory if you are using a different one
 git clone https://github.com/Sjohn21/MMM-GPIO-HANDLER.git
@@ -81,11 +81,15 @@ npm install
 ```
 
 # Configuration
-Add the module to your modules array in your `config.js`. Full list of configurable options can be found in [Module Configuration](#Module-Configuration).
+To configure this module, add it to your modules array in your `config.js`. The full list of configurable options can be found in [Module Configuration](#Module-Configuration).
 
 ## Example Configuration
-Below is a simple example, with two buttons connected on pins 24 & 25 [(one with internal pull-up resistor and one with internall pull-down resistor active)](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#inputs), one PIR sensor on pin 14 (with pull-up resistor) and one unspecified/other sensor on pin 8 as inputs. The example has 5 outputs defined, one (software) PWM output with a fixed state (250000) for dutyCycle on pin 4, one hardwarePWM output with an effect of type Pulse using a speed of 50ms between changes and in 50 steps (of complete dutyCycle) on pin 12, an On/Off output with a default state of 1 on pin 15, an On/Off output with a default state of 0 on pin 10 and finally a (software) PWM output with an effect of type Breath using a speed of 50ms between changes and in 10 steps given a certain bandwitdh of dutyCycle between minimum 20% and maximum 80% of dutyCycle.
-
+Below is a simple example with two buttons connected to pins 24 & 25. One button has an internal pull-up resistor, and the other has an internal pull-down resistor active. More information about pull-up and pull-down resistors can be found [here](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#inputs), There is also a PIR sensor connected to pin 14 with a pull-up resistor and an unspecified/other sensor on pin 8 as inputs. The example includes the definition of 5 outputs: 
+1. A (software) PWM output with a fixed state (250000) for dutyCycle on pin 4.
+2. A hardwarePWM output with an effect of type Pulse, using a speed of 50ms between changes and in 50 steps (of complete dutyCycle) on pin 12.
+3. An On/Off output with a default state of 1 on pin 15.
+4. An On/Off output with a default state of 0 on pin 10.
+5. A (software) PWM output with an effect of type Breath, using a speed of 50ms between changes and in 10 steps, within a certain bandwidth of dutyCycle between a minimum of 20% and a maximum of 80% of dutyCycle.
 ```js
 {
 	module: "MMM-GPIO-HANDLER",
@@ -156,8 +160,8 @@ See below table for all options for the global module configuration. Some of the
 
 | Option                          | Type     | Default Value | Description |
 | ------------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `input`                         | `object` | `{}`    | An object for configuration of Inputs, see [Input Configuration](#Input-Configuration). Default `{}`, no inputs configured                     |
-| `output`                        | `object` | `{}`    | An object for configuration of Outputs, see [Output Configuration](#Output-Configuration). Default `{}`, no output configured                  |
+| `input`                         | `object` | `{}`    | An object for configuration of Inputs, see [Input Configuration](#Input-Configuration). Default `{}`, no inputs configured                              |
+| `output`                        | `object` | `{}`    | An object for configuration of Outputs, see [Output Configuration](#Output-Configuration). Default `{}`, no output configured                           |
 | `debounce`                      | `uint`   | `10`    | In milliseconds, if the input pin changes state during this period after the last event the new event will be ignored                                   |
 | `longPressTime`                 | `uint`   | `500`   | In milliseconds, for buttons. When pressed shorter than this time it is seen as a short press, when longer than this time as a long press               |
 | `longPressTimeOut`              | `uint`   | `3000`  | In milliseconds, for buttons. When pressed longer than this time a long press is send and a warning if button is stuck                                  |
@@ -167,9 +171,9 @@ See below table for all options for the global module configuration. Some of the
 | `default_PWM_upperLimitDCP`     | `uint`   |         | 0 - 100 (percentage), to change max dutyCycle (percentage from 1000000 for hardwarePWM and 255 for SoftwarePWM). If not set max Dutycyle is upper limit |
 | `default_PWM_lowerLimitDCP`     | `uint`   |         | 0 - 100 (percentage), to change min dutyCycle (percentage from 1000000 for hardwarePWM and 255 for SoftwarePWM). If not set min Dutycyle is lower limit |
 | `default_PWM_flashLength`       | `uint`   |         | In milliseconds, for use with Flash effect. The amount of time the led is on in a flash cycle. Cannot be less than 4ms and should be greater than default_PWM_speed |
-| `default_PWM_startOn`           | `string` |         | `high` or `low`, to set if effects `Breath`, `Pulse` or `Flash` start on upper limit or lower limer of dutyCycle                                        |
+| `default_PWM_startOn`           | `string` |         | `high` or `low`, to set if effects `Breath`, `Pulse` or `Flash` start on upper limit or lower limit of dutyCycle                                        |
 | `default_PWM_cycles`            | `int`    |         | To set the amount of cycles an effect lasts for effects `Breath`, `Pulse` and `Flash`. Use `-1` for infinite cycles (or until a new effect is set)      |
-| `default_PWM_endOn`             | `string` |         | `high` or `low`, to set if effects `Breath`, `Pulse` or `Flash` end on upper limit or lower limer of dutyCycle after set cycles                         |
+| `default_PWM_endOn`             | `string` |         | `high` or `low`, to set if effects `Breath`, `Pulse` or `Flash` end on upper limit or lower limit of dutyCycle after set cycles                         |
 | `default_PWM_endPrevOn`         | `string` |         | `high` or `low`, if an output already has an effect of `Breath`, `Pulse` or `Flash` and another effect is set on the same output the previous effect can be ended on upper or lower limit of dutyCycle. When not set the new effect overwrites the previous effect immediately |
 | `default_PWM_state`             | `uint`   | `0`     | 0 - 1000000, state of dutyCycle for `Fixed` PWM Effect. This is the Range of HardwarePWM and is automatically converted linearly to a dutyCycle between 0 - 255 if output is SoftwarePWM |
 | `default_hardwarePWM_frequency` | `uint`   | `0`     | 0 - 125000000 (or 0 - 187500000 for the BCM2711), PWM frequency for HardwarePWM, Frequencies above 30MHz are unlikely to work. HardwarePWM only works on pins `12`, `13`, `18` and `19`. Max two channels available, see [gpioHardwarePWM](https://abyz.me.uk/rpi/pigpio/cif.html#gpioHardwarePWM) for details. |
@@ -201,17 +205,17 @@ Each pin configuration goes in their own object, within the output object. Confi
 | `default_PWM_upperLimitDCP`     | `uint`   | `optional`  | 0 - 100 (percentage), to change max dutyCycle (percentage from 1000000 for hardwarePWM and 255 for SoftwarePWM). If not set max Dutycyle is upper limit |
 | `default_PWM_lowerLimitDCP`     | `uint`   | `optional`  | 0 - 100 (percentage), to change min dutyCycle (percentage from 1000000 for hardwarePWM and 255 for SoftwarePWM). If not set min Dutycyle is lower limit |
 | `default_PWM_flashLength`       | `uint`   | `optional`  | In milliseconds, for use with Flash effect. The amount of time the led is on in a flash cycle. Cannot be less than 4ms and should be greater than default_PWM_speed |
-| `default_PWM_startOn`           | `string` | `optional`  | `high` or `low`, to set if effects `Breath`, `Pulse` or `Flash` start on upper limit or lower limer of dutyCycle                                        |
+| `default_PWM_startOn`           | `string` | `optional`  | `high` or `low`, to set if effects `Breath`, `Pulse` or `Flash` start on upper limit or lower limit of dutyCycle                                        |
 | `default_PWM_cycles`            | `int`    | `optional`  | To set the amount of cycles an effect lasts for effects `Breath`, `Pulse` and `Flash`. Use `-1` for infinite cycles (or until a new effect is set)      |
-| `default_PWM_endOn`             | `string` | `optional`  | `high` or `low`, to set if effects `Breath`, `Pulse` or `Flash` end on upper limit or lower limer of dutyCycle after set cycles                         |
+| `default_PWM_endOn`             | `string` | `optional`  | `high` or `low`, to set if effects `Breath`, `Pulse` or `Flash` end on upper limit or lower limit of dutyCycle after set cycles                         |
 | `default_PWM_endPrevOn`         | `string` | `optional`  | `high` or `low`, if an output already has an effect of `Breath`, `Pulse` or `Flash` and another effect is set on the same output the previous effect can be ended on upper or lower limit of dutyCycle. When not set the new effect overwrites the previous effect immediately |
 | `default_PWM_state`             | `uint`   | `optional`  | 0 - 1000000, state of dutyCycle for `Fixed` PWM Effect. This is the Range of HardwarePWM and is automatically converted linearly to a dutyCycle between 0 - 255 if output is SoftwarePWM |
 | `default_hardwarePWM_frequency` | `uint`   | `optional`  | 0 - 125000000 (or 0 - 187500000 for the BCM2711), PWM frequency for HardwarePWM, Frequencies above 30MHz are unlikely to work. HardwarePWM only works on pins `12`, `13`, `18` and `19`. Max two channels available, see [gpioHardwarePWM](https://abyz.me.uk/rpi/pigpio/cif.html#gpioHardwarePWM) for details. |
 | `default_state`                 | `uint`   | `optional`  | 0 - 1, state for On/Off outputs.                                                                                                                        |
 
 # Usage
-The module needs to have the Pigpio Deamon running.  
-Before running Magic Mirror start the Deamon using the following command:
+The module needs to have the Pigpio Daemon running.  
+Before running Magic Mirror start the Daemon using the following command:
 ```bash
 sudo pigpiod -l
 ```
@@ -223,28 +227,26 @@ DISPLAY=:0 npm start
 ```
 
 ## Input usage
-When all inputs are configured, the inputs will be monitored. Once triggered the module will send a notification to all other modules.
-An other module can than do whatever is needed with this notification.
-The human readable name will be converted to a system name converted to all uppercase and where spaces are replaced by an underscore.
+Once all inputs are configured, the module will monitor them. When triggered, the module will send notifications to other modules. Another module can then perform actions based on these notifications. The human-readable name will be converted to a system name in all uppercase, with spaces replaced by underscores.
 
 ### Buttons
-The pull can be set as per [Input Configuration](#Input-Configuration), if the Pull is set to `PUD_UP` and the level (3.3v) changes to 0 the notification will trigger. Likewise when the Pull is set to `PUD_DOWN` or not set and the level (3.3v) changes to 1.  
-If the button is hold longer than `longPressTime` a long press notification will be send, if the button is hold shorter than this time a short press notification will be send. If the button is hold longer than `longPressTimeOut` a long press notification will be send at `longPressTimeOut` nonetheless and an Alert will be send to notify the user if the button might be stuck.  
+The pull can be set as per [Input Configuration](#Input-Configuration). If the Pull is set to `PUD_UP` and the level (3.3v) changes to 0, the notification will trigger. Similarly, when the Pull is set to `PUD_DOWN` or not set, and the level (3.3v) changes to 1, the notification will trigger.  
+If the button is held longer than `longPressTime`, a long press notification will be sent. If the button is held shorter than this time, a short press notification will be sent. If the button is held longer than `longPressTimeOut`, a long-press notification will be sent at `longPressTimeOut` nonetheless, and an alert will be sent to notify the user if the button might be stuck.  
 Notifications are formatted as: `<<systemname>>_LONG_PRESSED` and `<<systemname>>_SHORT_PRESSED`.  
-E.g. if the Button is named `Button 1` the notifications will be `BUTTON_1_LONG_PRESSED` and `BUTTON_1_SHORT_PRESSED`.
+For example, if the Button is named `Button 1`, the notifications will be `BUTTON_1_LONG_PRESSED` and `BUTTON_1_SHORT_PRESSED`.
 
 ### PIR
-The pull can be set as per [Input Configuration](#Input-Configuration), if the Pull is set to `PUD_UP` and the level (3.3v) changes to 0 the detection notification will trigger. Likewise when the Pull is set to `PUD_DOWN` or not set and the level (3.3v) changes to 1. A no detection notification will trigger when the level changes the other way around.  
+The pull can be set as per [Input Configuration](#Input-Configuration). If the Pull is set to `PUD_UP` and the level (3.3v) changes to 0, the detection notification will trigger. Similarly, when the Pull is set to `PUD_DOWN` or not set and the level (3.3v) changes to 1, the detection notification will trigger. A no detection notification will trigger when the level changes the other way around.  
 Notifications are formatted as: `<<systemname>>_DETECTION` and `<<systemname>>_NO_DETECTION`.  
-E.g. if the PIR sensor is named `Pir Sensor` the notifications will be `PIR_SENSOR_DETECTION` and `PIR_SENSOR_NO_DETECTION`.
+For example, if the PIR sensor is named `Pir Sensor`, the notifications will be  `PIR_SENSOR_DETECTION` and `PIR_SENSOR_NO_DETECTION`.
 
 ### Other
-If something else than a button or PIR is connected, the `other` option cna be used. When the level (3.3v) changes to 1 a high notification will be send, when the level (3.3v) changes to 0 a low notification will be send. When the level (3.3v) changes to something else a floating notification will be send.  
+If something other than a button or PIR is connected, the `other` option can be used. When the level (3.3v) changes to 1, a high notification will be sent. When the level (3.3v) changes to 0, a low notification will be sent. When the level (3.3v) changes to something else, a floating notification will be sent.  
 otifications are formatted as: `<<systemname>>_HIGH`, `<<systemname>>_LOW` and `<<systemname>>_FLOATING`.  
-E.g. if the sensor is named `Other type of Sensor` he notifications will be `OTHER_TYPE_OF_SENSOR_HIGH`, `OTHER_TYPE_OF_SENSOR_LOW` and `OTHER_TYPE_OF_SENSOR_FLOATING`.
+For example, if the sensor is named `Other type of Sensor`, the notifications will be `OTHER_TYPE_OF_SENSOR_HIGH`, `OTHER_TYPE_OF_SENSOR_LOW` and `OTHER_TYPE_OF_SENSOR_FLOATING`.
 
 ## Output usage
-When all outputs are configured, the defaults set on the outputs will run once the module is started. E.g. if globally `default_PWM_cycles` is set to `10` cycles and pin 17 is configured as:
+Once all outputs are configured, the defaults set on the outputs will run when the module is started. For example, if globally `default_PWM_cycles` is set to `10` cycles and pin 17 is configured as:
 ```js
 "17": {
 	type: "PWM",
@@ -256,9 +258,9 @@ When all outputs are configured, the defaults set on the outputs will run once t
 	default_PWM_lowerLimitDCP: 20
 }
 ```
-the led (in this case a led on a button) will run the the `Breath` effect with a changing speed of `50` and in `10` steps between a max dutyCycle of `80` percent and a min dutyCycle of `20` percent.
+the LED (in this case, a LED on a button) will run the the `Breath` effect with a changing speed of `50` and in `10` steps between a max dutyCycle of `80` percent and a min dutyCycle of `20` percent.
 
-Additionally, Outputs can be changed by notifications. The `HANDLE_PWM` and `HANDLE_ON/OFF` notification are read by the module and a `payload` set the options. See next paragraphs.
+Additionally, outputs can be changed by notifications. The `HANDLE_PWM` and `HANDLE_ON/OFF` notification are read by the module, and a `payload` sets the options. See the next paragraphs for details.
 
 ### HANDLE_ON/OFF notification payload
 The `HANDLE_ON/OFF` notification should be accompanied by an object in the payload. The object options are:
@@ -269,9 +271,9 @@ The `HANDLE_ON/OFF` notification should be accompanied by an object in the paylo
 | `action` | `string` | `required`  | The action, should be `set`, `toggle` or `trigger`                                                                   |
 | `state`  | `uint`   | `required*` | The new state `0` or `1`, only required for the action `set`                                                         |
 | `level`  | `uint`   | `required*` | The level for the trigger `0` or `1`, only required for the action `trigger`                                         |
-| `length` | `uint`   | `required*` | In Mircroseconds, the length of how long the trigger pulse of `level`is send, only required for the action `trigger` |
+| `length` | `uint`   | `required*` | In microseconds, the length of how long the trigger pulse of `level` is sent, only required for the action `trigger` |
 
-The `set` action sets the output pin to the `state` given. The `toggle` action changes the state, if it was 0 it will be set 1 and vice versa. The `trigger` action send a short pulse of `level` for `length` microseconds.
+The `set` action sets the output pin to the given `state`. The `toggle` action changes the state; if it was 0, it will be set to 1, and vice versa. The `trigger` action sends a short pulse of `level` for `length` microseconds.
 
 Examples of payload:
 ```js
@@ -296,17 +298,17 @@ The `HANDLE_PWM` notification should be accompanied by an object in the payload.
 
 | Option             | Type     | Requirement | Description                                                                                                                                                        |
 | ------------------ | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pin`              | `uint`   | `required`  | The pin to change pwm                                                                                                                                              |
+| `pin`              | `uint`   | `required`  | The pin to change PWM                                                                                                                                              |
 | `pwmEffect`        | `string` | `required`  | `Fixed`, `Breath`, `Pulse`, `Flash`, `Fade-in` or `Fade-out`                                                                                                       |
 | `pwmSpeed`         | `uint`   | `required*` | In milliseconds, cannot be less than 4ms. Time between each step in an effect. Not required for `Fixed` effect                                                     |
-| `pwmSteps`         | `uint`   | `required*` | In milliseconds, Amount of steps for changing an effect between min an max dutyCycle.  Not required for `Fixed` and `Flash` effect                                 |
+| `pwmSteps`         | `uint`   | `required*` | Amount of steps for changing an effect between min an max dutyCycle.  Not required for `Fixed` and `Flash` effect                                 |
 | `pwmUpperLimitDCP` | `uint`   | `optional`  | 0 - 100 (percentage), to change max dutyCycle. If not set max Dutycyle is upper limit                                                                              |
 | `pwmLowerLimitDCP` | `uint`   | `optional`  | 0 - 100 (percentage), to change min dutyCycle. If not set min Dutycyle is lower limit                                                                              |
-| `pwmFlashLength`   | `uint`   | `required*` | In milliseconds, only required with `Flash` effect. The amount of time the led is on in a flash cycle. Cannot be less than 4ms and should be greater than pwmSpeed |
+| `pwmFlashLength`   | `uint`   | `required*` | In milliseconds, only required with `Flash` effect. The amount of time the LED is on in a flash cycle. Cannot be less than 4ms and should be greater than pwmSpeed |
 | `pwmState`         | `uint`   | `required*` | 0 - 1000000, state of dutyCycle for `Fixed` PWM Effect. This is the Range of HardwarePWM and is automatically converted linearly to a dutyCycle between 0 - 255 if output is SoftwarePWM |
-| `pwmStart`         | `string` | `optional`  | `high` or `low`, to set if effects `Breath`, `Pulse` or `Flash` start on upper limit or lower limer of dutyCycle. Deaults at `low`                                 |
+| `pwmStart`         | `string` | `optional`  | `high` or `low`, to set if effects `Breath`, `Pulse` or `Flash` start on upper limit or lower limit of dutyCycle. Deaults at `low`                                 |
 | `pwmCycles`        | `int`    | `required*` | To set the amount of cycles an effect lasts. Requirde for effects `Breath`, `Pulse` and `Flash`. Use `-1` for infinite cycles (or until a new effect is set)       |
-| `pwmEnd`           | `string` | `optional`  | `high` or `low`, to set if effects `Breath`, `Pulse` or `Flash` end on upper limit or lower limer of dutyCycle after set cycles                                    |
+| `pwmEnd`           | `string` | `optional`  | `high` or `low`, to set if effects `Breath`, `Pulse` or `Flash` end on upper limit or lower limit of dutyCycle after set cycles                                    |
 | `pwmEndPrevOn`     | `string` | `optional`  | `high` or `low`, if an output already has an effect of `Breath`, `Pulse` or `Flash` and another effect is set on the same output the previous effect can be ended on upper or lower limit of dutyCycle. When not set the new effect overwrites the previous effect immediately |
 
 Example payload:
